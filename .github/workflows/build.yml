@@ -3,7 +3,6 @@ on: [push, pull_request]
 
 jobs:
   build:
-    # Using 22.04 because it has the most stable library compatibility for Buildozer
     runs-on: ubuntu-22.04
 
     steps:
@@ -17,7 +16,9 @@ jobs:
 
       - name: Install System Dependencies
         run: |
-          sudo apt-get update
+          sudo apt-get update --fix-missing
+          # Explicitly installing the problematic dependency first
+          sudo apt-get install -y libunwind-dev
           sudo apt-get install -y \
             build-essential git python3-dev ffmpeg libsdl2-dev libsdl2-image-dev \
             libsdl2-mixer-dev libsdl2-ttf-dev libportmidi-dev libswscale-dev \
@@ -33,7 +34,6 @@ jobs:
           pip install "cython<3.0" buildozer 
 
       - name: Build with Buildozer
-        # We force-clear GitHub's variables to prevent the 'Broken Pipe' error
         env:
           ANDROID_SDK_ROOT: ""
           ANDROID_NDK_HOME: ""
@@ -43,5 +43,5 @@ jobs:
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: SkySnake-Certified-Build
+          name: SkySnake-Fix-Build
           path: bin/*.apk
