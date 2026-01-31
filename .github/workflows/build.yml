@@ -9,6 +9,13 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
+      - name: Set up Java 17
+        # This is the 'Professional' fix for the gradlew error
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
@@ -17,7 +24,6 @@ jobs:
       - name: Install System Dependencies
         run: |
           sudo apt-get update --fix-missing
-          # Explicitly installing the problematic dependency first
           sudo apt-get install -y libunwind-dev
           sudo apt-get install -y \
             build-essential git python3-dev ffmpeg libsdl2-dev libsdl2-image-dev \
@@ -34,14 +40,17 @@ jobs:
           pip install "cython<3.0" buildozer 
 
       - name: Build with Buildozer
+        # We force-unset everything that could possibly conflict
         env:
           ANDROID_SDK_ROOT: ""
           ANDROID_NDK_HOME: ""
+          JAVA_HOME: "" 
         run: |
+          # The 'yes |' ensures we accept the Android SDK licenses automatically
           yes | buildozer -v android debug
           
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: SkySnake-Fix-Build
+          name: SkySnake-Final-APK
           path: bin/*.apk
