@@ -3,7 +3,8 @@ on: [push, pull_request]
 
 jobs:
   build:
-    runs-on: ubuntu-latest
+    # Using 22.04 because it has the most stable library compatibility for Buildozer
+    runs-on: ubuntu-22.04
 
     steps:
       - name: Checkout code
@@ -14,22 +15,33 @@ jobs:
         with:
           python-version: '3.11'
 
-      - name: Install Android Dependencies
+      - name: Install System Dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y build-essential git python3-dev ffmpeg libsdl2-dev libsdl2-image-dev libsdl2-mixer-dev libsdl2-ttf-dev libportmidi-dev libswscale-dev libavformat-dev libavcodec-dev zlib1g-dev libgstreamer1.0-dev gstreamer1.0-plugins-base gstreamer1.0-plugins-good libsqlite3-dev sqlite3 bzip2 libbz2-dev libssl-dev openssl libgdbm-dev libncursesw5-dev libffi-dev libdb5.3-dev libexpat1-dev liblzma-dev tk-dev cmake autoconf libtool pkg-config
+          sudo apt-get install -y \
+            build-essential git python3-dev ffmpeg libsdl2-dev libsdl2-image-dev \
+            libsdl2-mixer-dev libsdl2-ttf-dev libportmidi-dev libswscale-dev \
+            libavformat-dev libavcodec-dev zlib1g-dev libgstreamer1.0-dev \
+            gstreamer1.0-plugins-base gstreamer1.0-plugins-good libsqlite3-dev \
+            sqlite3 bzip2 libbz2-dev libssl-dev openssl libgdbm-dev \
+            libncursesw5-dev libffi-dev libdb5.3-dev libexpat1-dev liblzma-dev \
+            tk-dev cmake autoconf libtool pkg-config unzip zip
 
-      - name: Install Buildozer
+      - name: Install Buildozer & Cython
         run: |
           pip install --upgrade pip
-          pip install buildozer cython==0.29.33
+          pip install "cython<3.0" buildozer 
 
-      - name: Build APK
-        # This will take 15-20 minutes
-        run: yes | buildozer -v android debug
-
+      - name: Build with Buildozer
+        # We force-clear GitHub's variables to prevent the 'Broken Pipe' error
+        env:
+          ANDROID_SDK_ROOT: ""
+          ANDROID_NDK_HOME: ""
+        run: |
+          yes | buildozer -v android debug
+          
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: SkySnake-Final-APK
+          name: SkySnake-Certified-Build
           path: bin/*.apk
