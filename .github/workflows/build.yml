@@ -1,46 +1,67 @@
 name: Build APK
 on: [push, pull_request]
+
 jobs:
   build:
     runs-on: ubuntu-latest
-    env:
-      ANDROID_HOME: /usr/local/lib/android/sdk
-      PATH: /usr/local/lib/android/sdk/platform-tools:/usr/local/bin:${{ env.PATH }}
+
     steps:
       - uses: actions/checkout@v4
 
-      - name: Set up Java
-        uses: actions/setup-java@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
         with:
-          distribution: temurin
-          java-version: '11'
+          python-version: '3.11'
 
-      - name: Install system packages
+      - name: Install dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y --no-install-recommends unzip wget zip zlib1g-dev libncurses5
+          sudo apt-get install -y \
+            build-essential \
+            git \
+            python3-dev \
+            ffmpeg \
+            libsdl2-dev \
+            libsdl2-image-dev \
+            libsdl2-mixer-dev \
+            libsdl2-ttf-dev \
+            libportmidi-dev \
+            libswscale-dev \
+            libavformat-dev \
+            libavcodec-dev \
+            zlib1g-dev \
+            libgstreamer1.0 \
+            gstreamer1.0-plugins-base \
+            gstreamer1.0-plugins-good \
+            libsqlite3-dev \
+            sqlite3 \
+            bzip2 \
+            libbz2-dev \
+            libssl-dev \
+            openssl \
+            libgdbm-dev \
+            libncursesw5-dev \
+            libffi-dev \
+            libdb5.3-dev \
+            libexpat1-dev \
+            liblzma-dev \
+            tk-dev \
+            libshare-dev \
+            cmake \
+            autoconf \
+            libtool \
+            pkg-config
 
-      - name: Install Android command-line tools and SDK components
+      - name: Install Buildozer
         run: |
-          mkdir -p $ANDROID_HOME/cmdline-tools
-          cd /tmp
-          wget -q https://dl.google.com/android/repository/commandlinetools-linux-9477386_latest.zip -O cmdline-tools.zip
-          unzip -q cmdline-tools.zip -d $ANDROID_HOME/cmdline-tools
-          # Ensure sdkmanager is available; use the extracted cmdline-tools
-          yes | $ANDROID_HOME/cmdline-tools/cmdline-tools/bin/sdkmanager --sdk_root=$ANDROID_HOME "platform-tools" "platforms;android-31" "build-tools;31.0.0"
-
-      - name: Install Python and Buildozer
-        run: |
-          python3 -m pip install --upgrade pip setuptools wheel
-          python3 -m pip install buildozer cython
+          pip install --upgrade pip
+          pip install buildozer cython==0.29.33
 
       - name: Build with Buildozer
-        run: |
-          # adjust target (android debug/release) and any buildozer.spec settings as needed
-          buildozer -v android debug
-
+        run: yes | buildozer -v android debug
+        
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: package
+          name: snake-game-apk
           path: bin/*.apk
